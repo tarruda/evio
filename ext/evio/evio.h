@@ -4,4 +4,5 @@ typedef struct {
 } timer_data;
 
 void Init_evio();
-void init_ev();
+void init_ev(VALUE module);
+void init_signal(VALUE module);

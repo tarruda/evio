@@ -22,8 +22,7 @@ timer_cb (EV_P_ ev_timer *watcher, int revents)
   }
 }
 
-
-static void
+static VALUE
 set_timer(VALUE self, VALUE delay, VALUE repeat_delay)
 {
   ev_timer *rv;
@@ -49,16 +48,18 @@ set_timer(VALUE self, VALUE delay, VALUE repeat_delay)
   // bind the block to its outer scope and store for later use
   data->bound_block = rb_block_proc();
   rv->data = data;
-  if (repeat_dl > 0.) data->repeat = 1;
+  if (repeat_dl > 0) data->repeat = 1;
   else data->repeat = 0;
   ev_timer_init(rv, timer_cb, dl, repeat_dl);
   ev_timer_start(loop, rv);
+  return Qnil;
 }
 
-static void
+static VALUE
 start_loop(VALUE self)
 {
   ev_run(loop, 0);
+  return Qnil;
 }
 
 static void
