@@ -1,6 +1,7 @@
 typedef struct {
   VALUE bound_block;
-} event_data;
+  int repeat;
+} timer_data;
 
 void Init_evio();
 void init_ev();
