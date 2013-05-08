@@ -15,8 +15,11 @@ timer_cb (EV_P_ ev_timer *watcher, int revents)
   rv = rb_funcall(data->bound_block, rb_intern("call"), 0);
 
   if (data->repeat == 0 || rv == Qfalse) {
-    // remove watcher from loop and free resources
+    // remove watcher from loop
     ev_timer_stop(loop, watcher);
+    // make the block available for gc collect
+    rb_gc_unregister_address(&data->bound_block);
+    // free resources unmanaged by the gc
     free(data);
     free(watcher);
   }
@@ -47,6 +50,8 @@ set_timer(VALUE self, VALUE delay, VALUE repeat_delay)
   data = ALLOC(timer_data);
   // bind the block to its outer scope and store for later use
   data->bound_block = rb_block_proc();
+  // don't let the gc collect it
+  rb_gc_register_address(&data->bound_block);
   rv->data = data;
   if (repeat_dl > 0) data->repeat = 1;
   else data->repeat = 0;
