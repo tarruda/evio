@@ -1,4 +1,5 @@
 require 'evio'
+require 'fiber'
 
 class String
   # Strip leading whitespace from each line that is the same as the 
@@ -92,29 +93,18 @@ describe 'event loop' do
       Evio::start_loop
       chunks.should eq ['This ', 'is a ']
     end
+
+    it 'can read synchronously inside fibers' do
+      chunks = []
+      Evio::start_loop do
+        fiber = Fiber.new do
+          chunks.push @io.read_sync(5)
+          chunks.push @io.read_sync(5)
+        end
+        fiber.resume
+      end
+      chunks.should eq ['This ', 'is a ']
+    end
   end
 
-  # describe 'stop_loop' do
-  #   # FIXME for some reason(related with libev) this test make others that
-  #   # follow it fail, so it must be declared last
-  #   it 'breaks loop but finishes processing pending events' do
-  #     Evio::set_timer(0, 10e-9) do
-  #       @flag += 1
-  #       @flag.should eq 1
-  #       Evio::stop_loop
-  #     end
-  #     Evio::set_timer(0, 10e-9) do
-  #       @flag += 1
-  #       @flag.should eq 2
-  #       Evio::set_timer(0, 10e-9) do
-  #         # this will never be called since the loop will exit after
-  #         # this iteration
-  #         @flag += 1
-  #       end
-  #       Evio::stop_loop
-  #     end
-  #     Evio::start_loop
-  #     @flag.should eq 2
-  #   end
-  # end
 end
