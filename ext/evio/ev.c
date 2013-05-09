@@ -43,6 +43,8 @@ set_timer(VALUE self, VALUE delay, VALUE repeat_delay)
   int type;
   double dl, repeat_dl;
 
+  rb_secure(2);
+
   if ((type = TYPE(delay)) == T_FLOAT || type == T_FIXNUM)
     dl = NUM2DBL(delay);
   else
@@ -67,6 +69,7 @@ set_timer(VALUE self, VALUE delay, VALUE repeat_delay)
   else data->repeat = 0;
   ev_timer_init(watcher, timer_cb, dl, repeat_dl);
   ev_timer_start(loop, watcher);
+
   return Qnil;
 }
 
