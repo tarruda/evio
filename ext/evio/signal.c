@@ -3,7 +3,7 @@
 static void
 signal_cb(struct ev_loop *loop, ev_signal *watcher, int revents)
 {
-  signal_data *data = watcher->data;
+  block_wrapper *data = watcher->data;
   VALUE rv;
 
   rv = rb_funcall(data->block, rb_intern("call"), 1, INT2FIX(watcher->signum));
@@ -20,7 +20,7 @@ static VALUE
 on_signal(VALUE self, VALUE signum)
 {
   ev_signal *watcher;
-  signal_data *data;
+  block_wrapper *data;
   int sign;
 
   SECURE_CHECK;
@@ -30,7 +30,7 @@ on_signal(VALUE self, VALUE signum)
 
   sign = FIX2INT(signum);
   watcher = ALLOC(ev_signal);
-  data = ALLOC(signal_data);
+  data = ALLOC(block_wrapper);
   data->block = rb_block_proc();
   watcher->data = data;
   rb_gc_register_address(&data->block);

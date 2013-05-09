@@ -15,7 +15,7 @@ file_open(int argc, VALUE *argv)
   char *path, *mode;
   int flags, filemode;
 
-  rb_secure(2);
+  SECURE_CHECK;
 
   if (argc < 1 || argc > 3)
     rb_raise(rb_eArgError, "wrong number of arguments (%d for 1..3)", argc);

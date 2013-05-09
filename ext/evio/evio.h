@@ -19,21 +19,15 @@ typedef struct {
 
 } io_stream;
 
-struct block_wrapper {
+typedef struct {
   VALUE block;
-};
+} block_wrapper;
 
-typedef struct block_wrapper signal_data;
-typedef struct block_wrapper prepare_data;
 typedef struct {
   VALUE block;
   int buffer_size;
   char *buffer;
 } io_read_data;
-typedef struct {
-  VALUE block;
-  int repeat;
-} timeout_data;
 
 struct ev_loop *loop;
 VALUE mEvIO;
@@ -49,3 +43,22 @@ void init_stream();
 void init_file();
 
 #define SECURE_CHECK rb_secure(2)
+
+#define INSTALL_WATCHER_BLOCK(watcher, data, watcher_type, data_type, \
+    cb, ...) \
+  watcher = ALLOC(ev_##watcher_type); \
+  data = ALLOC(data_type); \
+  data->block = rb_block_proc(); \
+  rb_gc_register_address(&data->block); \
+  watcher->data = data; \
+  ev_##watcher_type##_init(watcher, cb, ##__VA_ARGS__); \
+  ev_##watcher_type##_start(loop, watcher)
+
+#define INSTALL_WATCHER(watcher_type, data_type) \
+  INSTALL_WATCHER_BLOCK(watcher, data, watcher_type, data_type,\
+      watcher_type##_cb)
+
+#define INSTALL_TIMER(delay, repeat) \
+  INSTALL_WATCHER_BLOCK(watcher, data, timer, block_wrapper,\
+      timer_cb, delay, repeat);
+
