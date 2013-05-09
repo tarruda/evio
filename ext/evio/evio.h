@@ -1,3 +1,13 @@
+#include <errno.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <ruby.h>
+#include <ev.h>
 
 typedef struct {
   int fd;
@@ -23,11 +33,19 @@ typedef struct {
 typedef struct {
   VALUE block;
   int repeat;
-} timer_data;
+} timeout_data;
 
 struct ev_loop *loop;
+VALUE mEvIO;
+VALUE cStream;
+VALUE cFile;
+
+void stream_free();
 
 void Init_evio();
-void init_ev(VALUE module);
-void init_signal(VALUE module);
-void init_io(VALUE module);
+void init_loop();
+void init_signal();
+void init_stream();
+void init_file();
+
+#define SECURE_CHECK rb_secure(2)

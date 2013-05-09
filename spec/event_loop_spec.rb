@@ -15,39 +15,40 @@ describe 'event loop' do
     @flag = 0
   end
 
-  describe 'set_timer' do
+  describe 'on_timeout' do
     it 'only executes block on event loop iteration' do
-      Evio::set_timer(0, 0) do
+      EvIO::on_timeout(0, 0) do
         @flag = 1
       end
       @flag.should eq 0
-      Evio::start_loop
+      EvIO::start_looping
       @flag.should eq 1
     end
 
     it 'stops repeating when false is returned from block' do
-      Evio::set_timer(0, 10e-9) { @flag += 1; false if @flag == 5 }
-      Evio::start_loop
+      EvIO::on_timeout(0, 10e-9) { @flag += 1; false if @flag == 5 }
+      EvIO::start_looping
       @flag.should eq 5
     end   
 
     it 'accepts only numeric arguments' do
-      expect { Evio::set_timer('', 0) { } }.to raise_error(ArgumentError)
-      expect { Evio::set_timer(true, 0) { } }.to raise_error(ArgumentError)
-      expect { Evio::set_timer(0, '') { } }.to raise_error(ArgumentError)
+      expect { EvIO::on_timeout('', 0) { } }.to raise_error(ArgumentError)
+      expect { EvIO::on_timeout(true, 0) { } }.to raise_error(ArgumentError)
+      expect { EvIO::on_timeout(0, '') { } }.to raise_error(ArgumentError)
     end
 
     it 'raises error when no block is passed' do
-      expect { Evio::set_timer(0, 0) }.to raise_error(ArgumentError)
+      expect { EvIO::on_timeout(0, 0) }.to raise_error(ArgumentError)
     end
   end
 
   describe 'trap' do
     it 'runs block when signal is received' do
-      Evio::Signal::trap('USR1') { @flag = 1; false }
+      signals = Signal.list
+      EvIO::on_signal(signals['USR1']) { @flag = 1; false }
       @flag.should eq 0
       pid = Process.pid
-      Evio::start_loop do
+      EvIO::start_looping do
         fork { Process.kill('USR1', pid) }
       end
       @flag.should eq 1
@@ -67,39 +68,39 @@ describe 'event loop' do
       File.open(fname, 'w') do |f|
         f.puts fcontents
       end
-      @io = Evio::IO.open(fname)
+      @file = EvIO::File.open(fname)
     end
 
     after :each do
       File.unlink(fname)
-      @io.close
+      @file.close
     end
 
     it 'can read' do
-      @io.read do |err, chunk|
+      @file.read do |err, chunk|
         chunk.should eq fcontents
       end
-      Evio::start_loop
+      EvIO::start_looping
     end
 
     it 'can read smaller chunks' do
       chunks = []
       count = 0
-      @io.read(5) do |err, chunk|
+      @file.read(5) do |err, chunk|
         chunks.push chunk
         count += 1
         count < 2 # only read two chunks
       end
-      Evio::start_loop
+      EvIO::start_looping
       chunks.should eq ['This ', 'is a ']
     end
 
     it 'can read synchronously inside fibers' do
       chunks = []
-      Evio::start_loop do
+      EvIO::start_looping do
         fiber = Fiber.new do
-          chunks.push @io.read_sync(5)
-          chunks.push @io.read_sync(5)
+          chunks.push @file.read_sync(5)
+          chunks.push @file.read_sync(5)
         end
         fiber.resume
       end

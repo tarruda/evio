@@ -1,6 +1,6 @@
 
-module Evio
-  class IO
+module EvIO
+  class Stream
     def read_sync(chunk_size)
       rv = nil
       fiber = Fiber::current

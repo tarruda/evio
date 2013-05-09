@@ -1,14 +1,12 @@
-#include <ruby.h>
-#include <ev.h>
-
 #include "evio.h"
+
 
 
 void Init_evio()
 {
-  loop = EV_DEFAULT;
-  VALUE module = rb_define_module("Evio");
-  init_ev(module);
-  init_signal(module);
-  init_io(module);
+  mEvIO = rb_define_module("EvIO");
+  init_loop();
+  init_signal();
+  init_stream();
+  init_file();
 }
