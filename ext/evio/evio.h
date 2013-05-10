@@ -9,6 +9,16 @@
 #include <ruby.h>
 #include <ev.h>
 
+typedef struct event_handler {
+  VALUE block;
+  VALUE handler_list;
+} event_handler;
+
+typedef struct event_data {
+  VALUE argv;
+  VALUE handler_list;
+} event_data;
+
 typedef struct {
   int fd;
   int closed;
@@ -33,14 +43,17 @@ struct ev_loop *loop;
 VALUE mEvIO;
 VALUE cStream;
 VALUE cFile;
+VALUE mEmitter;
 
 void stream_free();
 
 void Init_evio();
 void init_loop();
-void init_signal();
-void init_stream();
-void init_file();
+void init_emitter();
+void init_timer();
+/* void init_signal(); */
+/* void init_stream(); */
+/* void init_file(); */
 
 #define SECURE_CHECK rb_secure(2)
 
