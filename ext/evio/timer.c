@@ -1,35 +1,37 @@
 #include "evio.h"
 
 static void
-timer_cb(struct ev_loop *loop, ev_timer *watcher, int revents)
+idle_cb(uv_idle_t *handle, int revents)
 {
-  block_wrapper *data = watcher->data;
+  block_wrapper *data = handle->data;
+  VALUE rv = rb_funcall(data->block, rb_intern("call"), 0);
 
+  UNINSTALL_HANDLE(idle);
+}
+
+static void
+timer_cb(uv_timer_t *handle, int revents)
+{
+  block_wrapper *data = handle->data;
   VALUE rv;
 
   rv = rb_funcall(data->block, rb_intern("call"), 0);
 
-  if (watcher->repeat == 0. || rv == Qfalse) {
-    // remove watcher from loop
-    ev_timer_stop(loop, watcher);
-    // make the block available for gc collect
-    rb_gc_unregister_address(&data->block);
-    // free resources unmanaged by the gc
-    free(data);
-    free(watcher);
+  if (handle->repeat == 0. || rv == Qfalse) {
+    UNINSTALL_HANDLE(timer);
   }
 }
 
 static VALUE
 on_tick(VALUE self)
 {
-  ev_timer *watcher;
+  uv_timer_t *handle;
   block_wrapper *data;
 
   if (!rb_block_given_p())
     rb_raise(rb_eArgError, "a block is required");
 
-  INSTALL_TIMER(0., 0.);
+  INSTALL_HANDLE(idle, block_wrapper);
 
   return Qnil;
 }
@@ -37,7 +39,7 @@ on_tick(VALUE self)
 static VALUE
 on_timeout(VALUE self, VALUE delay)
 {
-  ev_timer *watcher;
+  uv_timer_t *handle;
   block_wrapper *data;
   int type;
   double dl;
@@ -60,7 +62,7 @@ on_timeout(VALUE self, VALUE delay)
 static VALUE
 on_interval(int argc, VALUE *argv)
 {
-  ev_timer *watcher;
+  uv_timer_t *handle;
   block_wrapper *data;
   int type;
   double repeat, dl;

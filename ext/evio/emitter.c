@@ -24,12 +24,12 @@ handler_stop(VALUE handler_wrapped)
 }
 
 static void
-emit_cb(struct ev_loop *loop, ev_timer *watcher, int revents)
+idle_cb(uv_idle_t *handle, int status)
 {
   VALUE *handler_list, rv;
   event_handler *handler;
   int i, len;
-  event_data *data = watcher->data;
+  event_data *data = handle->data;
 
   len = RARRAY_LEN(data->handler_list);
   handler_list = RARRAY_PTR(data->handler_list);
@@ -44,8 +44,8 @@ emit_cb(struct ev_loop *loop, ev_timer *watcher, int revents)
 
   rb_gc_unregister_address(&data->handler_list);
   rb_gc_unregister_address(&data->argv);
-  ev_timer_stop(loop, watcher);
-  free(watcher);
+  uv_idle_stop(handle);
+  free(handle);
   free(data);
 }
 
@@ -85,7 +85,7 @@ static VALUE
 emit(VALUE emitter, VALUE argv)
 {
   VALUE event, handlers, list;
-  ev_timer *watcher;
+  uv_idle_t *handle;
   event_data *data;
 
   event = rb_ary_shift(argv);
@@ -103,10 +103,10 @@ emit(VALUE emitter, VALUE argv)
   rb_gc_register_address(&data->handler_list);
   data->argv = argv;
   rb_gc_register_address(&data->argv);
-  watcher = ALLOC(ev_timer);
-  watcher->data = data;
-  ev_timer_init(watcher, emit_cb, 0., 0.);
-  ev_timer_start(loop, watcher);
+  handle = ALLOC(uv_idle_t);
+  handle->data = data;
+  uv_idle_init(uv_default_loop(), handle);
+  uv_idle_start(handle, idle_cb);
 
   return Qtrue;
 }
@@ -128,33 +128,6 @@ on(VALUE emitter, VALUE argv)
   block = rb_block_proc();
   rb_ary_unshift(argv, block);
   rb_apply(emitter, id_subscribe, argv);
-}
-
-static void
-prepare_cb(struct ev_loop *loop, ev_prepare *watcher, int revents)
-{
-  block_wrapper *data = watcher->data;
-
-  rb_funcall(data->block, rb_intern("call"), 0);
-  ev_prepare_stop(loop, watcher);
-  rb_gc_unregister_address(&data->block);
-  free(data);
-  free(watcher);
-}
-
-static VALUE
-start()
-{
-  ev_prepare *watcher;
-  block_wrapper *data;
-
-  if (rb_block_given_p()) {
-    INSTALL_WATCHER(prepare, block_wrapper);
-  }
-
-  ev_run(loop, 0);
-
-  return Qnil;
 }
 
 void init_emitter()

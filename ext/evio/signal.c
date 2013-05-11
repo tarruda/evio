@@ -1,25 +1,25 @@
 #include "evio.h"
 
 static void
-signal_cb(struct ev_loop *loop, ev_signal *watcher, int revents)
+signal_cb(uv_signal_t *handle, int revents)
 {
-  block_wrapper *data = watcher->data;
+  block_wrapper *data = handle->data;
   VALUE rv;
 
-  rv = rb_funcall(data->block, rb_intern("call"), 1, INT2FIX(watcher->signum));
+  rv = rb_funcall(data->block, rb_intern("call"), 1, INT2FIX(handle->signum));
 
   if (rv == Qfalse) {
-    ev_signal_stop(loop, watcher);
+    uv_signal_stop(handle);
     rb_gc_unregister_address(&data->block);
     free(data);
-    free(watcher);
+    free(handle);
   }
 }
 
 static VALUE
 on_signal(VALUE self, VALUE signum)
 {
-  ev_signal *watcher;
+  uv_signal_t *handle;
   block_wrapper *data;
   int sign;
 
@@ -29,13 +29,7 @@ on_signal(VALUE self, VALUE signum)
     rb_raise(rb_eArgError, "signal must be an integer");
 
   sign = FIX2INT(signum);
-  watcher = ALLOC(ev_signal);
-  data = ALLOC(block_wrapper);
-  data->block = rb_block_proc();
-  watcher->data = data;
-  rb_gc_register_address(&data->block);
-  ev_signal_init(watcher, signal_cb, sign);
-  ev_signal_start(loop, watcher);
+  INSTALL_HANDLE(signal, block_wrapper, sign);
 
   return Qnil;
 }

@@ -19,6 +19,6 @@ task :default => :spec
 
 task :spec => "lib/#{NAME}/#{NAME}.so"
 
-CLEAN.include('ext/**/*{.o,.log,.so}')
-CLEAN.include('ext/**/Makefile')
+CLEAN.include('ext/evio/*{.o,.log,.so}')
+CLEAN.include('ext/evio/Makefile')
 CLOBBER.include('lib/**/*.so')

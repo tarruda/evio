@@ -3,3 +3,4 @@ Makefile
 *.so
 *.log
 *.gem
+/ext/libuv*
