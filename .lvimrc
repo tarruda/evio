@@ -1,0 +1,5 @@
+let g:ctrlp_custom_ignore = {
+  \ 'dir':  '\v[\/](ext/libuv)',
+  \ }
+
+nnoremap <silent> <f5> :call SlimuxSendKeys('C-C " rake" Enter')<cr>

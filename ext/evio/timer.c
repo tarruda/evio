@@ -4,8 +4,8 @@ static void
 idle_cb(uv_idle_t *handle, int revents)
 {
   block_wrapper *data = handle->data;
-  VALUE rv = rb_funcall(data->block, rb_intern("call"), 0);
 
+  rb_funcall(data->block, rb_intern("call"), 0);
   UNINSTALL_HANDLE(idle);
 }
 
@@ -25,7 +25,7 @@ timer_cb(uv_timer_t *handle, int revents)
 static VALUE
 on_tick(VALUE self)
 {
-  uv_timer_t *handle;
+  uv_idle_t *handle;
   block_wrapper *data;
 
   if (!rb_block_given_p())
