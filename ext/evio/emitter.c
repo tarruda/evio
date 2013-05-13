@@ -38,8 +38,12 @@ idle_cb(uv_idle_t *handle, int status)
   while (i < len) {
     Data_Get_Struct(handler_list[i], event_handler, handler);
     rv = rb_apply(handler->block, id_call, data->argv);
-    if (rv == stop_sym) rb_ary_delete_at(data->handler_list, i);
-    else i++;
+    if (rv == stop_sym) {
+      rb_ary_delete_at(data->handler_list, i);
+      len--;
+    } else {
+      i++;
+    }
   }
 
   rb_gc_unregister_address(&data->handler_list);
@@ -52,7 +56,7 @@ idle_cb(uv_idle_t *handle, int status)
 static VALUE
 subscribe(int argc, VALUE *argv, VALUE emitter)
 {
-  VALUE handlers, list, event;
+  VALUE handlers, list, event, rv;
   event_handler *handler;
 
   handler = ALLOC(event_handler);
@@ -74,11 +78,13 @@ subscribe(int argc, VALUE *argv, VALUE emitter)
     rb_hash_aset(handlers, event, list);
   }
 
-  // store the handler
+  // store the handler in the list
+  rv = Data_Wrap_Struct(cHandler, 0, handler_free, handler);
+  rb_ary_push(list, rv);
+  // save a reference to the list in the handler to it can be stopped
   handler->handler_list = list;
-  rb_ary_push(list, Data_Wrap_Struct(cHandler, 0, handler_free, handler));
 
-  return Qnil;
+  return rv;
 }
 
 static VALUE
@@ -127,7 +133,8 @@ on(VALUE emitter, VALUE argv)
 
   block = rb_block_proc();
   rb_ary_unshift(argv, block);
-  rb_apply(emitter, id_subscribe, argv);
+
+  return rb_apply(emitter, id_subscribe, argv);
 }
 
 void init_emitter()

@@ -46,8 +46,8 @@ def build_libuv
       end
       pwd = Dir::pwd
       Dir::chdir extracted_libuv
-      # system('make libuv.so')
-      system('make')
+      system('make libuv.so')
+      # system('make')
       Dir::chdir pwd
     end
   end
@@ -59,7 +59,7 @@ HEADER_DIRS = [
   '/usr/local/include',
   RbConfig::CONFIG['includedir'],
   '/usr/include',
-  '../libuv/include'
+  File.expand_path('../libuv/include')
 ]
 
 LIB_DIRS = [
@@ -67,7 +67,7 @@ LIB_DIRS = [
   '/usr/local/lib',
   RbConfig::CONFIG['libdir'],
   '/usr/lib',
-  '../libuv'
+  File.expand_path('../libuv')
 ]
 
 build_libuv
