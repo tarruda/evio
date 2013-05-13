@@ -7,7 +7,7 @@ module EvIO
       @handlers = handlers
     end
 
-    def stop
+    def disable
       @handlers.delete(self)
     end
   end
@@ -47,10 +47,11 @@ module EvIO
           i += 1
         end
       end
+      :stop # disables the libuv handle
     end
 
     def disable_handler?(result, *args)
-      result == :stop
+      result == :disable
     end
   end
 end

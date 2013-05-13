@@ -41,7 +41,6 @@ VALUE cStream;
 VALUE cFile;
 VALUE mEmitter;
 
-void default_cb();
 void stream_free();
 
 void Init_evio();
@@ -54,8 +53,7 @@ void init_signal();
 
 #define SECURE_CHECK rb_secure(2)
 
-#define INSTALL_UV_HANDLE_GEN(handle, handle_type, d, dt, \
-    em, ha, ev, av, cb, ...) \
+#define INSTALL_UV_HANDLE_GEN(h, ht, d, dt, em, ha, ev, av, cb, ...) \
   d = ALLOC(dt); \
   d->handler_array = ha; \
   d->emitter = em; \
@@ -65,15 +63,26 @@ void init_signal();
   rb_gc_register_address(&d->emitter); \
   rb_gc_register_address(&d->event); \
   rb_gc_register_address(&d->handler_array); \
-  handle = ALLOC(uv_##handle_type##_t); \
-  handle->data = d; \
-  uv_idle_init(uv_default_loop(), handle); \
-  uv_idle_start(handle, (void (*)(uv_##handle_type##_t *, int))cb, \
-    ##__VA_ARGS__)
+  h = ALLOC(uv_##ht##_t); \
+  h->data = d; \
+  uv_##ht##_init(uv_default_loop(), h); \
+  uv_##ht##_start(h, (void (*)(uv_##ht##_t *, int))cb, ##__VA_ARGS__)
 
 #define INSTALL_UV_HANDLE(handle_type, cb, ...) \
   INSTALL_UV_HANDLE_GEN(handle, handle_type, data, event_data, \
       self, handler_array, event, argv, cb, ##__VA_ARGS__)
+
+#define UNINSTALL_UV_HANDLE_GEN(h, ht, d) \
+  rb_gc_unregister_address(&d->argv); \
+  rb_gc_unregister_address(&d->emitter); \
+  rb_gc_unregister_address(&d->event); \
+  rb_gc_unregister_address(&d->handler_array); \
+  uv_##ht##_stop((uv_##ht##_t *)h); \
+  free(h); \
+  free(d)
+
+#define UNINSTALL_UV_HANDLE(ht) \
+  UNINSTALL_UV_HANDLE_GEN(handle, ht, data)
 
 #define INSTALL_HANDLE_BLOCK(handle, data, handle_type, data_type, \
     block_expr, cb, ...) \

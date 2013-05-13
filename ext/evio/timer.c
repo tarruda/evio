@@ -34,39 +34,39 @@ subscribe_tick(VALUE block)
   return Qnil;
 }
 
-static VALUE
-emit_timeout(VALUE self, VALUE argv)
-{
-  VALUE block, delay;
-  uv_timer_t *handle;
-  event_data *data;
-  int type;
-  double dl;
+/* static VALUE */
+/* emit_timeout(VALUE self, VALUE argv) */
+/* { */
+/*   VALUE block, delay; */
+/*   uv_timer_t *handle; */
+/*   event_data *data; */
+/*   int type; */
+/*   double dl; */
 
-  block = rb_ary_shift(argv);
-  delay = rb_ary_shift(argv);
+/*   block = rb_ary_shift(argv); */
+/*   delay = rb_ary_shift(argv); */
 
-  if ((type = TYPE(delay)) == T_FLOAT || type == T_FIXNUM)
-    dl = NUM2DBL(delay);
-  else
-    rb_raise(rb_eArgError, "delay argument must be a number");
+/*   if ((type = TYPE(delay)) == T_FLOAT || type == T_FIXNUM) */
+/*     dl = NUM2DBL(delay); */
+/*   else */
+/*     rb_raise(rb_eArgError, "delay argument must be a number"); */
 
-  data = ALLOC(event_data);
-  data->emitter = self;
-  data->event = block; // block will identify the correct handler
-  data->argv = argv;
-  rb_gc_register_address(&data->argv);
-  rb_gc_register_address(&data->emitter);
-  rb_gc_register_address(&data->event);
-  handle = ALLOC(uv_timer_t);
-  handle->data = data;
-  uv_timer_init(uv_default_loop(), handle);
-  uv_timer_start(handle, (void (*)(uv_idle_t *, int))default_cb, dl, 0.);
+/*   data = ALLOC(event_data); */
+/*   data->emitter = self; */
+/*   data->event = block; // block will identify the correct handler */
+/*   data->argv = argv; */
+/*   rb_gc_register_address(&data->argv); */
+/*   rb_gc_register_address(&data->emitter); */
+/*   rb_gc_register_address(&data->event); */
+/*   handle = ALLOC(uv_timer_t); */
+/*   handle->data = data; */
+/*   uv_timer_init(uv_default_loop(), handle); */
+/*   uv_timer_start(handle, (void (*)(uv_idle_t *, int))default_cb, dl, 0.); */
 
-  /* INSTALL_TIMER(dl, 0.); */
+/*   /1* INSTALL_TIMER(dl, 0.); *1/ */
 
-  return Qnil;
-}
+/*   return Qnil; */
+/* } */
 
 static VALUE
 subscribe_interval(int argc, VALUE *argv)

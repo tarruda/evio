@@ -1,25 +1,22 @@
 #include "evio.h"
 
+VALUE stop_sym;
 
-void
+static void
 default_cb(uv_handle_t *handle, int status)
 {
   event_data *data = handle->data;
 
-  rb_funcall(data->emitter, rb_intern("process_event"), 2, data->event,
-      data->argv);
-  rb_gc_unregister_address(&data->argv);
-  rb_gc_unregister_address(&data->emitter);
-  rb_gc_unregister_address(&data->event);
-  uv_idle_stop((uv_idle_t *)handle);
-  free(handle);
-  free(data);
+  if (rb_funcall(data->emitter, rb_intern("process_event"), 2, data->event,
+      data->argv) == stop_sym) {
+    UNINSTALL_UV_HANDLE(idle);
+  }
 }
 
 static VALUE
 emit(VALUE self, VALUE argv)
 {
-  VALUE event, can_emit, handlers, handler_array;
+  VALUE event, handlers, handler_array;
   uv_idle_t *handle;
   event_data *data;
 
@@ -42,4 +39,6 @@ void init_emitter()
 {
   mEmitter = rb_define_module_under(mEvIO, "Emitter");
   rb_define_protected_method(mEmitter, "emit", emit, -2);
+
+  stop_sym = ID2SYM(rb_intern("stop"));
 }

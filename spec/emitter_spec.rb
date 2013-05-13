@@ -42,13 +42,13 @@ describe 'Emitter mixin:' do
   end
 
   describe "handler object returned by the 'on' method" do
-    it "stops the block from handling the event by calling 'stop'" do
+    it "stops handling the event by calling 'disable'" do
       EvIO::start do
         handler = @emitter.on :event do
           @flag = 1
         end
         @flag.should eq 0
-        handler.stop()
+        handler.disable()
         @emitter.trigger_event()
       end
       @flag.should eq 0
@@ -56,11 +56,11 @@ describe 'Emitter mixin:' do
   end
 
   describe "block passed to the 'on' method" do
-    it 'stops handling the event when :stop is returned' do
+    it 'stops handling the event when :disable is returned' do
       EvIO::start do
         @emitter.on :event do
           @flag = 1
-          :stop
+          :disable
         end
         @flag.should eq 0
         @emitter.trigger_event()
