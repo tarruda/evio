@@ -1,3 +1,5 @@
 require 'evio/evio'
-require 'evio/signal'
-require 'evio/io'
+require 'evio/emitter'
+require 'evio/timer'
+# require 'evio/signal'
+# require 'evio/io'

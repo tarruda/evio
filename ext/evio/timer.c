@@ -1,5 +1,6 @@
 #include "evio.h"
 
+
 static void
 idle_cb(uv_idle_t *handle, int revents)
 {
@@ -23,44 +24,52 @@ timer_cb(uv_timer_t *handle, int revents)
 }
 
 static VALUE
-on_tick(VALUE self)
+subscribe_tick(VALUE block)
 {
   uv_idle_t *handle;
   block_wrapper *data;
 
-  if (!rb_block_given_p())
-    rb_raise(rb_eArgError, "a block is required");
-
-  INSTALL_HANDLE(idle, block_wrapper);
+  INSTALL_HANDLE2(idle, block_wrapper, block);
 
   return Qnil;
 }
 
 static VALUE
-on_timeout(VALUE self, VALUE delay)
+emit_timeout(VALUE self, VALUE argv)
 {
+  VALUE block, delay;
   uv_timer_t *handle;
-  block_wrapper *data;
+  event_data *data;
   int type;
   double dl;
 
-  SECURE_CHECK;
+  block = rb_ary_shift(argv);
+  delay = rb_ary_shift(argv);
 
   if ((type = TYPE(delay)) == T_FLOAT || type == T_FIXNUM)
     dl = NUM2DBL(delay);
   else
     rb_raise(rb_eArgError, "delay argument must be a number");
 
-  if (!rb_block_given_p())
-    rb_raise(rb_eArgError, "a block is required");
+  data = ALLOC(event_data);
+  data->emitter = self;
+  data->event = block; // block will identify the correct handler
+  data->argv = argv;
+  rb_gc_register_address(&data->argv);
+  rb_gc_register_address(&data->emitter);
+  rb_gc_register_address(&data->event);
+  handle = ALLOC(uv_timer_t);
+  handle->data = data;
+  uv_timer_init(uv_default_loop(), handle);
+  uv_timer_start(handle, (void (*)(uv_idle_t *, int))default_cb, dl, 0.);
 
-  INSTALL_TIMER(dl, 0.);
+  /* INSTALL_TIMER(dl, 0.); */
 
   return Qnil;
 }
 
 static VALUE
-on_interval(int argc, VALUE *argv)
+subscribe_interval(int argc, VALUE *argv)
 {
   uv_timer_t *handle;
   block_wrapper *data;
@@ -100,7 +109,15 @@ on_interval(int argc, VALUE *argv)
 void
 init_timer()
 {
-  rb_define_singleton_method(mEvIO, "on_tick", on_tick, 0);
-  rb_define_singleton_method(mEvIO, "on_timeout", on_timeout, 1);
-  rb_define_singleton_method(mEvIO, "on_interval", on_interval, -1);
+  VALUE cTimer, rb_mSingleton, timer_instance;
+
+  /* rb_require("singleton"); */
+  /* rb_mSingleton = rb_eval_string("Singleton"); */
+
+  cTimer = rb_define_class_under(mEvIO, "Timer", rb_cObject);
+  /* rb_define_private_method(cTimer, "emit_timeout", emit_timeout, -2); */
+
+  /* rb_define_singleton_method(mEvIO, "on_tick", on_tick, 0); */
+  /* rb_define_singleton_method(mEvIO, "on_timeout", on_timeout, 1); */
+  /* rb_define_singleton_method(mEvIO, "on_interval", on_interval, -1); */
 }
