@@ -32,22 +32,25 @@ module EvIO
       handler
     end
 
-    def process_event(event, args)
-      return if not @handlers or @handlers.length == 0
+    def process_event(handler_array, event, args)
+      len = handler_array.length
       i = 0
-      len = @handlers.length
       while i < len
-        handler = @handlers[event][i]
+        handler = handler_array[i]
         block = handler.block
         result = block.call(*args)
         if disable_handler?(result, event, *args)
-          @handlers.delete(handler)
+          handler_array.delete(handler)
           len -= 1
         else
           i += 1
         end
       end
-      :stop # disables the libuv handle
+      :stop if len == 0 or stop_handle?(handler_array, event, args)
+    end
+
+    def stop_handle?(*args)
+      true
     end
 
     def disable_handler?(result, *args)

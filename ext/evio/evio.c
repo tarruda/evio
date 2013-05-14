@@ -8,7 +8,7 @@ void Init_evio()
   init_loop();
   init_emitter();
   init_timer();
-  init_signal();
+  /* init_signal(); */
   /* init_stream(); */
   /* init_file(); */
 }

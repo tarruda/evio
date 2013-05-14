@@ -40,6 +40,7 @@ VALUE mEvIO;
 VALUE cStream;
 VALUE cFile;
 VALUE mEmitter;
+VALUE stop_sym;
 
 void stream_free();
 
@@ -47,7 +48,7 @@ void Init_evio();
 void init_loop();
 void init_emitter();
 void init_timer();
-void init_signal();
+/* void init_signal(); */
 /* void init_stream(); */
 /* void init_file(); */
 
@@ -72,6 +73,20 @@ void init_signal();
   INSTALL_UV_HANDLE_GEN(handle, handle_type, data, event_data, \
       self, handler_array, event, argv, cb, ##__VA_ARGS__)
 
+#define UV_CALLBACK(ht) \
+  void \
+  ht##_cb(uv_##ht##_t *handle, int status) \
+  { \
+    event_data *data = handle->data; \
+    if (rb_funcall(data->emitter, rb_intern("process_event"), 3, \
+          data->handler_array, data->event, data->argv) == stop_sym) { \
+      UNINSTALL_UV_HANDLE(ht); \
+    } \
+  }
+
+#define UV_CALLBACK_PROTO(ht) \
+  void ht##_cb(uv_##ht##_t *, int)
+
 #define UNINSTALL_UV_HANDLE_GEN(h, ht, d) \
   rb_gc_unregister_address(&d->argv); \
   rb_gc_unregister_address(&d->emitter); \
@@ -84,30 +99,6 @@ void init_signal();
 #define UNINSTALL_UV_HANDLE(ht) \
   UNINSTALL_UV_HANDLE_GEN(handle, ht, data)
 
-#define INSTALL_HANDLE_BLOCK(handle, data, handle_type, data_type, \
-    block_expr, cb, ...) \
-  handle = ALLOC(uv_##handle_type##_t); \
-  data = ALLOC(data_type); \
-  data->block = block_expr; \
-  rb_gc_register_address(&data->block); \
-  handle->data = data; \
-  uv_##handle_type##_init(uv_default_loop(), handle); \
-  uv_##handle_type##_start(handle, cb, ##__VA_ARGS__)
 
-#define INSTALL_HANDLE(handle_type, data_type, ...) \
-  INSTALL_HANDLE_BLOCK(handle, data, handle_type, data_type, rb_block_proc(), \
-      handle_type##_cb, ##__VA_ARGS__)
-
-#define INSTALL_HANDLE2(handle_type, data_type, block_expr, ...) \
-  INSTALL_HANDLE_BLOCK(handle, data, handle_type, data_type, block_expr, \
-      handle_type##_cb, ##__VA_ARGS__)
-
-#define INSTALL_TIMER(delay, repeat) \
-  INSTALL_HANDLE_BLOCK(handle, data, timer, block_wrapper,\
-      rb_block_proc(), timer_cb, delay * 1000, repeat * 1000);
-
-#define UNINSTALL_HANDLE(handle_type) \
-  uv_##handle_type##_stop(handle); \
-  rb_gc_unregister_address(&data->block); \
-  free(data); \
-  free(handle)
+UV_CALLBACK_PROTO(idle);
+UV_CALLBACK_PROTO(timer);

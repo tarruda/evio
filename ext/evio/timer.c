@@ -1,123 +1,66 @@
 #include "evio.h"
 
-
-static void
-idle_cb(uv_idle_t *handle, int revents)
-{
-  block_wrapper *data = handle->data;
-
-  rb_funcall(data->block, rb_intern("call"), 0);
-  UNINSTALL_HANDLE(idle);
-}
-
-static void
-timer_cb(uv_timer_t *handle, int revents)
-{
-  block_wrapper *data = handle->data;
-  VALUE rv;
-
-  rv = rb_funcall(data->block, rb_intern("call"), 0);
-
-  if (handle->repeat == 0. || rv == Qfalse) {
-    UNINSTALL_HANDLE(timer);
-  }
-}
+VALUE tick_sym, timeout_sym, interval_sym;
 
 static VALUE
-subscribe_tick(VALUE block)
+emit_tick(VALUE self, VALUE handler_array)
 {
+  VALUE event, argv;
   uv_idle_t *handle;
-  block_wrapper *data;
+  event_data *data;
 
-  INSTALL_HANDLE2(idle, block_wrapper, block);
+  event = tick_sym;
+  argv = tick_sym;
+  INSTALL_UV_HANDLE(idle, idle_cb);
 
   return Qnil;
 }
-
-/* static VALUE */
-/* emit_timeout(VALUE self, VALUE argv) */
-/* { */
-/*   VALUE block, delay; */
-/*   uv_timer_t *handle; */
-/*   event_data *data; */
-/*   int type; */
-/*   double dl; */
-
-/*   block = rb_ary_shift(argv); */
-/*   delay = rb_ary_shift(argv); */
-
-/*   if ((type = TYPE(delay)) == T_FLOAT || type == T_FIXNUM) */
-/*     dl = NUM2DBL(delay); */
-/*   else */
-/*     rb_raise(rb_eArgError, "delay argument must be a number"); */
-
-/*   data = ALLOC(event_data); */
-/*   data->emitter = self; */
-/*   data->event = block; // block will identify the correct handler */
-/*   data->argv = argv; */
-/*   rb_gc_register_address(&data->argv); */
-/*   rb_gc_register_address(&data->emitter); */
-/*   rb_gc_register_address(&data->event); */
-/*   handle = ALLOC(uv_timer_t); */
-/*   handle->data = data; */
-/*   uv_timer_init(uv_default_loop(), handle); */
-/*   uv_timer_start(handle, (void (*)(uv_idle_t *, int))default_cb, dl, 0.); */
-
-/*   /1* INSTALL_TIMER(dl, 0.); *1/ */
-
-/*   return Qnil; */
-/* } */
 
 static VALUE
-subscribe_interval(int argc, VALUE *argv)
+emit_timeout(VALUE self, VALUE handler_array, VALUE delay)
 {
+  VALUE event, argv;
   uv_timer_t *handle;
-  block_wrapper *data;
-  int type;
-  double repeat, dl;
-
-  SECURE_CHECK;
-
-  if (argc < 1 || argc > 2)
-    rb_raise(rb_eArgError, "wrong number of arguments (%d for 1..2)", argc);
-
-  if ((type = TYPE(argv[0])) == T_FLOAT || type == T_FIXNUM)
-    repeat = NUM2DBL(argv[0]);
-  else
-    rb_raise(rb_eArgError, "interval must be a number");
-
-  if (repeat <= 0)
-    rb_raise(rb_eArgError, "interval must be positive");
-
-  if (argc == 2) {
-    if ((type = TYPE(argv[1])) == T_FLOAT || type == T_FIXNUM)
-      dl = NUM2DBL(argv[1]);
-    else
-      rb_raise(rb_eArgError, "delay must be a number");
-  } else {
-    dl = repeat;
-  }
-
-  if (!rb_block_given_p())
-    rb_raise(rb_eArgError, "a block is required");
-
-  INSTALL_TIMER(dl, repeat);
+  event_data *data;
+  double dl;
+ 
+  dl = NUM2DBL(delay);
+  event = timeout_sym;
+  argv = timeout_sym;
+  INSTALL_UV_HANDLE(timer, timer_cb, dl * 1000, 0.);
 
   return Qnil;
 }
+
+static VALUE
+emit_interval(VALUE self, VALUE handler_array, VALUE interval, VALUE delay)
+{
+  VALUE event, argv;
+  uv_timer_t *handle;
+  event_data *data;
+  double dl, iv;
+
+  iv = NUM2DBL(interval);
+  dl = NUM2DBL(delay);
+  event = interval_sym;
+  argv = interval_sym;
+  INSTALL_UV_HANDLE(timer, timer_cb, dl * 1000, iv * 1000);
+
+  return Qnil;
+}
+
 
 void
 init_timer()
 {
-  VALUE cTimer, rb_mSingleton, timer_instance;
-
-  /* rb_require("singleton"); */
-  /* rb_mSingleton = rb_eval_string("Singleton"); */
+  VALUE cTimer;
 
   cTimer = rb_define_class_under(mEvIO, "Timer", rb_cObject);
-  /* rb_define_private_method(cTimer, "emit_timeout", emit_timeout, -2); */
+  rb_define_private_method(cTimer, "emit_tick", emit_tick, 1);
+  rb_define_private_method(cTimer, "emit_timeout", emit_timeout, 2);
+  rb_define_private_method(cTimer, "emit_interval", emit_interval, 3);
 
-  /* rb_define_singleton_method(mEvIO, "on_tick", on_tick, 0); */
-  /* rb_define_singleton_method(mEvIO, "on_timeout", on_timeout, 1); */
-  /* rb_define_singleton_method(mEvIO, "on_interval", on_interval, -1); */
+  tick_sym = ID2SYM(rb_intern("tick"));
+  timeout_sym = ID2SYM(rb_intern("timeout"));
+  interval_sym = ID2SYM(rb_intern("interval"));
 }

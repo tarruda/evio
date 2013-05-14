@@ -1,17 +1,15 @@
 #include "evio.h"
 
-VALUE stop_sym;
+/* void */
+/* idle_cb(uv_handle_t *handle, int status) */
+/* { */
+/*   event_data *data = handle->data; */
 
-static void
-default_cb(uv_handle_t *handle, int status)
-{
-  event_data *data = handle->data;
-
-  if (rb_funcall(data->emitter, rb_intern("process_event"), 2, data->event,
-      data->argv) == stop_sym) {
-    UNINSTALL_UV_HANDLE(idle);
-  }
-}
+/*   if (rb_funcall(data->emitter, rb_intern("process_event"), 3, */
+/*         data->handler_array, data->event, data->argv) == stop_sym) { */
+/*     UNINSTALL_UV_HANDLE(idle); */
+/*   } */
+/* } */
 
 static VALUE
 emit(VALUE self, VALUE argv)
@@ -30,7 +28,7 @@ emit(VALUE self, VALUE argv)
   if (handler_array == Qnil || RARRAY_LEN(handler_array) == 0)
     return Qfalse;
 
-  INSTALL_UV_HANDLE(idle, default_cb);
+  INSTALL_UV_HANDLE(idle, idle_cb);
 
   return Qtrue;
 }
