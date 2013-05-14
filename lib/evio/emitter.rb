@@ -2,13 +2,16 @@ module EvIO
   class Handler
     attr_reader :block
 
-    def initialize(handlers, block)
+    def initialize(handlers, block, emitter, event)
       @block = block
       @handlers = handlers
+      @emitter = emitter
+      @event = event
     end
 
     def disable
       @handlers.delete(self)
+      # @emitter.send(:handler_disabled, @handler_array, @event)
     end
   end
 
@@ -27,7 +30,7 @@ module EvIO
     def save_handler(block, event, *args)
       @handlers ||= {}
       @handlers[event] ||= []
-      handler = Handler.new(@handlers[event], block)
+      handler = Handler.new(@handlers[event], block, self, event)
       @handlers[event].push(handler)
       handler
     end
@@ -40,7 +43,7 @@ module EvIO
         block = handler.block
         result = block.call(*args)
         if disable_handler?(result, event, *args)
-          handler_array.delete(handler)
+          handler.disable()
           len -= 1
         else
           i += 1
@@ -56,5 +59,8 @@ module EvIO
     def disable_handler?(result, *args)
       result == :disable
     end
+
+    # def handler_disabled(handler_array, event)
+    # end
   end
 end

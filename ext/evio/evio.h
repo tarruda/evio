@@ -48,7 +48,7 @@ void Init_evio();
 void init_loop();
 void init_emitter();
 void init_timer();
-/* void init_signal(); */
+void init_signal();
 /* void init_stream(); */
 /* void init_file(); */
 
@@ -99,6 +99,14 @@ void init_timer();
 #define UNINSTALL_UV_HANDLE(ht) \
   UNINSTALL_UV_HANDLE_GEN(handle, ht, data)
 
+#define CHECK_HANDLERS_OR_RETURN \
+  handlers = rb_iv_get(self, "@handlers"); \
+  if (handlers == Qnil) \
+    return Qfalse; \
+  handler_array = rb_hash_aref(handlers, event); \
+  if (handler_array == Qnil || RARRAY_LEN(handler_array) == 0) \
+    return Qfalse
 
 UV_CALLBACK_PROTO(idle);
 UV_CALLBACK_PROTO(timer);
+UV_CALLBACK_PROTO(signal);

@@ -1,15 +1,5 @@
 #include "evio.h"
 
-/* void */
-/* idle_cb(uv_handle_t *handle, int status) */
-/* { */
-/*   event_data *data = handle->data; */
-
-/*   if (rb_funcall(data->emitter, rb_intern("process_event"), 3, */
-/*         data->handler_array, data->event, data->argv) == stop_sym) { */
-/*     UNINSTALL_UV_HANDLE(idle); */
-/*   } */
-/* } */
 
 static VALUE
 emit(VALUE self, VALUE argv)

@@ -1,41 +1,35 @@
-/* #include "evio.h" */
+#include "evio.h"
 
-/* static void */
-/* signal_cb(uv_signal_t *handle, int revents) */
-/* { */
-/*   block_wrapper *data = handle->data; */
-/*   VALUE rv; */
+static void
+free_signal_handle(uv_signal_t *handle)
+{
+  event_data *data = handle->data;
 
-/*   rv = rb_funcall(data->block, rb_intern("call"), 1, INT2FIX(handle->signum)); */
+  UNINSTALL_UV_HANDLE(signal);
+}
 
-/*   if (rv == Qfalse) { */
-/*     uv_signal_stop(handle); */
-/*     rb_gc_unregister_address(&data->block); */
-/*     free(data); */
-/*     free(handle); */
-/*   } */
-/* } */
+static VALUE
+subscribe_signal(VALUE self, VALUE signum, VALUE event, VALUE block)
+{
+  VALUE handlers, handler_array, argv;
+  uv_signal_t *handle;
+  event_data *data;
+  int sign;
 
-/* static VALUE */
-/* on_signal(VALUE self, VALUE signum) */
-/* { */
-/*   uv_signal_t *handle; */
-/*   block_wrapper *data; */
-/*   int sign; */
+  CHECK_HANDLERS_OR_RETURN;
 
-/*   SECURE_CHECK; */
+  argv = event;
+  sign = FIX2INT(signum);
+  INSTALL_UV_HANDLE(signal, signal_cb, sign);
 
-/*   if (TYPE(signum) != T_FIXNUM) */
-/*     rb_raise(rb_eArgError, "signal must be an integer"); */
+  return Data_Wrap_Struct(rb_cObject, 0, free_signal_handle, handle);
+}
 
-/*   sign = FIX2INT(signum); */
-/*   INSTALL_HANDLE(signal, block_wrapper, sign); */
+void
+init_signal()
+{
+  VALUE cSignal;
 
-/*   return Qnil; */
-/* } */
-
-/* void */
-/* init_signal() */
-/* { */
-/*   rb_define_singleton_method(mEvIO, "on_signal", on_signal, 1); */
-/* } */
+  cSignal = rb_define_class_under(mEvIO, "Signal", rb_cObject);
+  rb_define_private_method(cSignal, "subscribe_signal", subscribe_signal, 3);
+}

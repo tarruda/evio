@@ -1,7 +1,6 @@
 require 'evio'
 
 describe 'Timer' do
-
   before :each do
     @flag = 0
   end
@@ -9,7 +8,7 @@ describe 'Timer' do
   describe 'on :tick' do
     it 'executes block once on next event loop iteration' do
       EvIO::start do
-        EvIO::TIMER.on :tick do
+        EvIO::Timer.on :tick do
           @flag = 1
         end
         @flag.should eq 0
@@ -20,7 +19,7 @@ describe 'Timer' do
 
   describe 'on :timeout' do
     it 'executes block once after the time has ellapsed' do
-      EvIO::TIMER.on :timeout, 0.1 do
+      EvIO::Timer.on :timeout, 0.1 do
         @flag = 1
       end
       @flag.should eq 0
@@ -34,7 +33,7 @@ describe 'Timer' do
 
   describe 'on :interval' do
     it 'stops repeating when :disable is returned from block' do
-      EvIO::TIMER.on(:interval, 0.01, 'ds') do
+      EvIO::Timer.on(:interval, 0.01) do
         @flag += 1
         :disable if @flag == 5
       end
@@ -42,36 +41,32 @@ describe 'Timer' do
       @flag.should eq 5
     end
 
-    # it 'accepts delay before first run as second argument' do
-    #   EvIO::TIMER.on(:interval, 1, 0.01) { @flag += 1; :disable }
-    #   EvIO::start
-    #   @flag.should eq 1
-    # end
+    it 'stops repeating when disable is invoked on the handler' do
+      handler = EvIO::Timer.on(:interval, 0.01) do
+        @flag += 1
+        handler.disable if @flag == 3
+      end
+      EvIO::start
+      @flag.should eq 3
+    end
+
+    it 'accepts delay before first run as second argument' do
+      EvIO::Timer.on(:interval, 1, 0.01) { @flag += 1; :disable }
+      EvIO::start
+      @flag.should eq 1
+    end
 
     it 'accepts only numeric arguments' do
-      expect { EvIO::TIMER.on(:interval,'', 0) { } }.to \
+      expect { EvIO::Timer.on(:interval,'', 0) { } }.to \
         raise_error(ArgumentError)
-      expect { EvIO::TIMER.on(:interval, true, 0) { } }.to \
+      expect { EvIO::Timer.on(:interval, true, 0) { } }.to \
         raise_error(ArgumentError)
-      expect { EvIO::TIMER.on(:interval, 0, '') { } }.to \
+      expect { EvIO::Timer.on(:interval, 0, '') { } }.to \
         raise_error(ArgumentError)
     end
 
     it "does not accept zero interval" do
-      expect { EvIO::TIMER.on(:interval, 0) }.to raise_error(ArgumentError)
+      expect { EvIO::Timer.on(:interval, 0) }.to raise_error(ArgumentError)
     end
   end
-
-  # describe 'on_signal' do
-  #   it 'runs block when signal is received' do
-  #     signals = Signal.list
-  #     EvIO::on_signal(signals['USR1']) { @flag = 1; false }
-  #     @flag.should eq 0
-  #     pid = Process.pid
-  #     EvIO::start do
-  #       fork { Process.kill('USR1', pid) }
-  #     end
-  #     @flag.should eq 1
-  #   end
-  # end
 end

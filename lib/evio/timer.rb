@@ -6,9 +6,9 @@ module EvIO
     include Singleton
 
     protected
-    def subscribe(block, event, *args)
+    def save_handler(block, event, *args)
       handler_array = []
-      handler = Handler.new(handler_array, block)
+      handler = Handler.new(handler_array, block, self, event)
       handler_array.push(handler)
       case event
       when :tick
@@ -34,6 +34,7 @@ module EvIO
         delay = interval if not delay.is_a? Numeric
         emit_interval(handler_array, interval, delay)
       end
+      handler
     end
 
     def stop_handle?(handler_array, event, *args)
@@ -41,6 +42,8 @@ module EvIO
     end
   end
 
-  TIMER = Timer.instance()
+  original_verbose, $VERBOSE = $VERBOSE, nil
+  Timer = Timer.instance
+  $VERBOSE = original_verbose
 end
 
