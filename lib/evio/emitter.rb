@@ -1,17 +1,30 @@
 module EvIO
-  class Handler
-    attr_reader :block
-
-    def initialize(handlers, block, emitter, event)
-      @block = block
-      @handlers = handlers
-      @emitter = emitter
-      @event = event
+  class HandleWrap
+    def initialize(handle, type)
+      @handle = handle
+      @type = type
     end
 
     def disable
-      @handlers.delete(self)
-      # @emitter.send(:handler_disabled, @handler_array, @event)
+      case @type
+      when :idle
+        disable_idle(@handle)
+      when :timer
+        disable_timer(@handle)
+      end
+    end
+  end
+
+  class Handler
+    attr_reader :block
+
+    def initialize(handler_array, block)
+      @block = block
+      @handler_array = handler_array
+    end
+
+    def disable
+      @handler_array.delete(self)
     end
   end
 
@@ -30,37 +43,46 @@ module EvIO
     def save_handler(block, event, *args)
       @handlers ||= {}
       @handlers[event] ||= []
-      handler = Handler.new(@handlers[event], block, self, event)
+      handler = Handler.new(@handlers[event], block)
       @handlers[event].push(handler)
       handler
     end
 
-    def process_event(handler_array, event, args)
+    def emit(event, *args)
+      return false if not @handlers or not @handlers[event]
+      @handles ||= {}
+      if not @handles[event]
+        handle = idle_handle_new() do
+          process_handle_cb(@handlers[event], handle, event, *args)
+        end
+        handle = HandleWrap.new(handle, :idle)
+        @handles[event] = handle
+      end
+      true
+    end
+
+    def process_handle_cb(handler_array, handle, event, *args)
       len = handler_array.length
       i = 0
       while i < len
         handler = handler_array[i]
         block = handler.block
         result = block.call(*args)
-        if disable_handler?(result, event, *args)
+        if result == :disable
           handler.disable()
           len -= 1
         else
           i += 1
         end
       end
-      :stop if len == 0 or stop_handle?(handler_array, event, args)
+      if stop_handle?(handler_array, event, args)
+        handle.disable()
+        @handles.delete(event)
+      end
     end
 
     def stop_handle?(*args)
       true
     end
-
-    def disable_handler?(result, *args)
-      result == :disable
-    end
-
-    # def handler_disabled(handler_array, event)
-    # end
   end
 end

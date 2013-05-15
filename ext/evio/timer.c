@@ -1,66 +1,26 @@
 #include "evio.h"
 
-VALUE tick_sym, timeout_sym, interval_sym;
+UV_WRAPPER(timer)
 
-static VALUE
-emit_tick(VALUE self, VALUE handler_array)
+static inline void
+uv_wrapper_timer_start(uv_timer_t *handle, VALUE argv)
 {
-  VALUE event, argv;
-  uv_idle_t *handle;
-  event_data *data;
+  double delay, interval;
 
-  event = tick_sym;
-  argv = tick_sym;
-  INSTALL_UV_HANDLE(idle, idle_cb);
+  delay = NUM2DBL(rb_ary_entry(argv, 0));
+  interval = NUM2DBL(rb_ary_entry(argv, 1));
 
-  return Qnil;
+  uv_timer_start(handle, timer_handle_cb, delay * 1000, interval * 1000);
 }
-
-static VALUE
-emit_timeout(VALUE self, VALUE handler_array, VALUE delay)
-{
-  VALUE event, argv;
-  uv_timer_t *handle;
-  event_data *data;
-  double dl;
- 
-  dl = NUM2DBL(delay);
-  event = timeout_sym;
-  argv = timeout_sym;
-  INSTALL_UV_HANDLE(timer, timer_cb, dl * 1000, 0.);
-
-  return Qnil;
-}
-
-static VALUE
-emit_interval(VALUE self, VALUE handler_array, VALUE interval, VALUE delay)
-{
-  VALUE event, argv;
-  uv_timer_t *handle;
-  event_data *data;
-  double dl, iv;
-
-  iv = NUM2DBL(interval);
-  dl = NUM2DBL(delay);
-  event = interval_sym;
-  argv = interval_sym;
-  INSTALL_UV_HANDLE(timer, timer_cb, dl * 1000, iv * 1000);
-
-  return Qnil;
-}
-
 
 void
 init_timer()
 {
-  VALUE cTimer;
+  VALUE cTimer, c_timer_Handle;
 
   cTimer = rb_define_class_under(mEvIO, "Timer", rb_cObject);
-  rb_define_private_method(cTimer, "emit_tick", emit_tick, 1);
-  rb_define_private_method(cTimer, "emit_timeout", emit_timeout, 2);
-  rb_define_private_method(cTimer, "emit_interval", emit_interval, 3);
+  rb_define_private_method(cTimer, "timer_handle_new", timer_handle_new, -2);
 
-  tick_sym = ID2SYM(rb_intern("tick"));
-  timeout_sym = ID2SYM(rb_intern("timeout"));
-  interval_sym = ID2SYM(rb_intern("interval"));
+  rb_define_private_method(cHandleWrap, "disable_timer"
+      , timer_handle_disable, 1);
 }

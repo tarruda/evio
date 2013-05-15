@@ -1,32 +1,20 @@
 #include "evio.h"
 
+UV_WRAPPER(idle)
 
-static VALUE
-emit(VALUE self, VALUE argv)
+static inline void
+uv_wrapper_idle_start(uv_idle_t *handle, VALUE argv)
 {
-  VALUE event, handlers, handler_array;
-  uv_idle_t *handle;
-  event_data *data;
-
-  event = rb_ary_shift(argv);
-
-  handlers = rb_iv_get(self, "@handlers");
-  if (handlers == Qnil)
-    return Qfalse;
-
-  handler_array = rb_hash_aref(handlers, event);
-  if (handler_array == Qnil || RARRAY_LEN(handler_array) == 0)
-    return Qfalse;
-
-  INSTALL_UV_HANDLE(idle, idle_cb);
-
-  return Qtrue;
+  uv_idle_start(handle, idle_handle_cb);
 }
+
 
 void init_emitter()
 {
   mEmitter = rb_define_module_under(mEvIO, "Emitter");
-  rb_define_protected_method(mEmitter, "emit", emit, -2);
+  rb_define_private_method(mEmitter, "idle_handle_new", idle_handle_new, -2);
 
-  stop_sym = ID2SYM(rb_intern("stop"));
+  cHandleWrap = rb_define_class_under(mEvIO, "HandleWrap", rb_cObject);
+  rb_define_private_method(cHandleWrap, "disable_idle"
+      , idle_handle_disable, 1);
 }

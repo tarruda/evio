@@ -7,38 +7,40 @@ module EvIO
 
     protected
     def save_handler(block, event, *args)
-      handler_array = []
-      handler = Handler.new(handler_array, block, self, event)
-      handler_array.push(handler)
+      emit(block, event, *args)
+    end
+
+    def emit(block, event, *args)
       case event
       when :tick
-        emit_tick(handler_array)
+        timer_args = [0, 0]
       when :timeout
         delay = args[0]
-        if not delay.is_a? Numeric
-          raise ArgumentError, 'delay argument must be a number'
+        if not delay.is_a?(Numeric)
+          raise ArgumentError, 'timeout delay must be greater than 0'
         end
-        if delay <= 0
-          raise ArgumentError, 'delay must be greater than 0'
-        end
-        emit_timeout(handler_array, delay)
+        timer_args = [delay, 0]
       when :interval
         interval = args[0]
         delay = args[1]
-        if not interval.is_a? Numeric
-          raise ArgumentError, 'interval argument must be a number'
+        if not args[0].is_a?(Numeric)
+          raise ArgumentError, 'interval delay must be greater than 0'
         end
-        if interval <= 0
-          raise ArgumentError, 'interval must be greater than 0'
+        if delay
+          if not delay.is_a?(Numeric)
+            raise ArgumentError, 'interval delay must be greater than 0'
+          end
+        else
+          delay = interval
         end
-        delay = interval if not delay.is_a? Numeric
-        emit_interval(handler_array, interval, delay)
+        timer_args = [delay, interval]
       end
-      handler
-    end
-
-    def stop_handle?(handler_array, event, *args)
-      event == :tick or event == :timeout
+      handle = timer_handle_new(*timer_args) do
+        result = block.call()
+        handle.disable() if result == :disable or event != :interval
+      end
+      handle = HandleWrap.new(handle, :timer)
+      handle
     end
   end
 
