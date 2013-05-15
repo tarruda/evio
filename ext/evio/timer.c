@@ -16,10 +16,11 @@ uv_wrapper_timer_start(uv_timer_t *handle, VALUE argv)
 void
 init_timer()
 {
-  VALUE cTimer, c_timer_Handle;
+  VALUE cTimer;
 
   cTimer = rb_define_class_under(mEvIO, "Timer", rb_cObject);
-  rb_define_private_method(cTimer, "timer_handle_new", timer_handle_new, -2);
+  rb_define_private_method(cTimer, "timer_handle_new", timer_handle_new,
+      -2);
 
   rb_define_private_method(cHandleWrap, "disable_timer"
       , timer_handle_disable, 1);

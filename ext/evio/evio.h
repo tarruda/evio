@@ -47,7 +47,7 @@ void Init_evio();
 void init_loop();
 void init_emitter();
 void init_timer();
-/* void init_signal(); */
+void init_signal();
 /* void init_stream(); */
 /* void init_file(); */
 

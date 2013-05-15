@@ -1,4 +1,3 @@
-
 module EvIO
   class Signal
     include Emitter
@@ -21,24 +20,24 @@ module EvIO
 
     protected
     def subscribe(block, event, *args)
+      signum = @signal_table[event]
+      if not signum
+        raise ArgumentError, 'invalid signal'
+      end
       rv = save_handler(block, event, *args)
-      if not @subscribed[event]
-        # only need one libuv handle per signal
-        @subscribed[event] =
-          subscribe_signal(@signal_table[event], event, block)
+      @handles ||= {}
+      if not @handles[event]
+        handle = signal_handle_new(signum) do
+          process_handle_cb(@handlers[event], handle, event, *args)
+        end
+        handle = HandleWrap.new(handle, :signal)
+        @handles[event] = handle
       end
       rv
     end
 
-    # def handler_disabled(handler_array, event)
-    #   if handler_array.length == 0 and @subscribed[event]
-    #     @subscribed.delete(event)
-    #     # GC::start
-    #   end
-    # end
-
-    def stop_handle?(handler_array, event, *args)
-      false
+    def stop_handle?(handler_array, *args)
+      handler_array.length == 0
     end
   end
 

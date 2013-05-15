@@ -8,7 +8,7 @@ void Init_evio()
   init_loop();
   init_emitter();
   init_timer();
-  /* init_signal(); */
+  init_signal();
 
   id_call = rb_intern("call");
   /* init_stream(); */

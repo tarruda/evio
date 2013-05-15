@@ -11,6 +11,8 @@ module EvIO
         disable_idle(@handle)
       when :timer
         disable_timer(@handle)
+      when :signal
+        disable_signal(@handle)
       end
     end
   end

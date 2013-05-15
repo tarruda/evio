@@ -1,35 +1,25 @@
-/* #include "evio.h" */
+#include "evio.h"
 
-/* static void */
-/* free_signal_handle(uv_signal_t *handle) */
-/* { */
-/*   event_data *data = handle->data; */
+UV_WRAPPER(signal)
 
-/*   UNINSTALL_UV_HANDLE(signal); */
-/* } */
+static inline void
+uv_wrapper_signal_start(uv_signal_t *handle, VALUE argv)
+{
+  int signum;
 
-/* static VALUE */
-/* subscribe_signal(VALUE self, VALUE signum, VALUE event, VALUE block) */
-/* { */
-/*   VALUE handlers, handler_array, argv; */
-/*   uv_signal_t *handle; */
-/*   event_data *data; */
-/*   int sign; */
+  signum = NUM2INT(rb_ary_entry(argv, 0));
+  uv_signal_start(handle, signal_handle_cb, signum);
+}
 
-/*   CHECK_HANDLERS_OR_RETURN; */
+void
+init_signal()
+{
+  VALUE cSignal;
 
-/*   argv = event; */
-/*   sign = FIX2INT(signum); */
-/*   INSTALL_UV_HANDLE(signal, signal_cb, sign); */
+  cSignal = rb_define_class_under(mEvIO, "Signal", rb_cObject);
+  rb_define_private_method(cSignal, "signal_handle_new", signal_handle_new,
+      -2);
 
-/*   return Data_Wrap_Struct(rb_cObject, 0, free_signal_handle, handle); */
-/* } */
-
-/* void */
-/* init_signal() */
-/* { */
-/*   VALUE cSignal; */
-
-/*   cSignal = rb_define_class_under(mEvIO, "Signal", rb_cObject); */
-/*   rb_define_private_method(cSignal, "subscribe_signal", subscribe_signal, 3); */
-/* } */
+  rb_define_private_method(cHandleWrap, "disable_signal"
+      , signal_handle_disable, 1);
+}
