@@ -31,6 +31,7 @@ module EvIO
           process_handle_cb(@handlers[event], handle, event, *args)
         end
         handle = HandleWrap.new(handle, :signal)
+        handle.enable()
         @handles[event] = handle
       end
       rv

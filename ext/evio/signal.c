@@ -22,4 +22,6 @@ init_signal()
 
   rb_define_private_method(cHandleWrap, "disable_signal"
       , signal_handle_disable, 1);
+  rb_define_private_method(cHandleWrap, "enable_signal", signal_handle_enable,
+      1);
 }

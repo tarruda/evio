@@ -40,6 +40,7 @@ module EvIO
         handle.disable() if result == :disable or event != :interval
       end
       handle = HandleWrap.new(handle, :timer)
+      handle.enable()
       handle
     end
   end

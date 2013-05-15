@@ -17,4 +17,6 @@ void init_emitter()
   cHandleWrap = rb_define_class_under(mEvIO, "HandleWrap", rb_cObject);
   rb_define_private_method(cHandleWrap, "disable_idle"
       , idle_handle_disable, 1);
+  rb_define_private_method(cHandleWrap, "enable_idle", idle_handle_enable,
+      1);
 }

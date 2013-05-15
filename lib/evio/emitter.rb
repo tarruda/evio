@@ -5,6 +5,17 @@ module EvIO
       @type = type
     end
 
+    def enable
+      case @type
+      when :idle
+        enable_idle(@handle)
+      when :timer
+        enable_timer(@handle)
+      when :signal
+        enable_signal(@handle)
+      end
+    end
+
     def disable
       case @type
       when :idle
@@ -23,6 +34,10 @@ module EvIO
     def initialize(handler_array, block)
       @block = block
       @handler_array = handler_array
+    end
+
+    def enable
+      @handler_array.push(self)
     end
 
     def disable
@@ -58,6 +73,7 @@ module EvIO
           process_handle_cb(@handlers[event], handle, event, *args)
         end
         handle = HandleWrap.new(handle, :idle)
+        handle.enable()
         @handles[event] = handle
       end
       true
