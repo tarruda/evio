@@ -6,25 +6,11 @@ module EvIO
     end
 
     def enable
-      case @type
-      when :idle
-        enable_idle(@handle)
-      when :timer
-        enable_timer(@handle)
-      when :signal
-        enable_signal(@handle)
-      end
+      self.send("enable_#{@type}", @handle)
     end
 
     def disable
-      case @type
-      when :idle
-        disable_idle(@handle)
-      when :timer
-        disable_timer(@handle)
-      when :signal
-        disable_signal(@handle)
-      end
+      self.send("disable_#{@type}", @handle)
     end
   end
 
@@ -95,7 +81,7 @@ module EvIO
       end
       if stop_handle?(handler_array, event, args)
         handle.disable()
-        @handles.delete(event)
+        @handles.delete(event) if @handles
       end
     end
 
