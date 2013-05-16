@@ -1,5 +1,11 @@
-/* #include "evio.h" */
+#include "evio.h"
 
+static void
+free_stream(uv_handle_t *handle)
+{
+  free(handle->data);
+  free(handle);
+}
 
 /* static void */
 /* stream_read_cb(struct ev_loop *loop, ev_io *watcher, int revents) */
@@ -85,10 +91,16 @@
 /*   free(stream); */
 /* } */
 
-/* void init_stream() */
-/* { */
-/*   cStream = rb_define_class_under(mEvIO, "Stream", rb_cObject); */
+void
+evio_close_stream(uv_pipe_t *handle)
+{
+  uv_close((uv_handle_t *)handle, free_stream);
+}
 
-/*   rb_define_method(cStream, "read", stream_read, -1); */
-/*   rb_define_method(cStream, "close", stream_close, 0); */
-/* } */
+void init_stream()
+{
+  cStream = rb_define_class_under(mEvIO, "Stream", rb_cObject);
+
+  /* rb_define_method(cStream, "read", stream_read, -1); */
+  /* rb_define_method(cStream, "close", stream_close, 0); */
+}

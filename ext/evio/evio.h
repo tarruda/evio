@@ -12,27 +12,23 @@
 typedef struct event_data {
   VALUE argv;
   VALUE block;
+  void *extra;
 } event_data;
 
-/* typedef struct { */
-/*   int fd; */
-/*   int closed; */
-/*   enum { */
-/*     file, */
-/*     socket */
-/*   } stream_type; */
-
-/* } io_stream; */
-
 typedef struct {
-  VALUE block;
-} block_wrapper;
+  int fd;
+  int closed;
+  int writable;
+  int readable;
+} io_stream;
 
 typedef struct {
   VALUE block;
   int buffer_size;
   char *buffer;
 } io_read_data;
+
+uv_loop_t *event_loop;
 
 VALUE mEvIO;
 VALUE cHandleWrap;
@@ -41,15 +37,15 @@ VALUE cFile;
 VALUE mEmitter;
 VALUE id_call;
 
-void stream_free();
+void evio_close_stream(uv_pipe_t *);
 
 void Init_evio();
 void init_loop();
 void init_emitter();
 void init_timer();
 void init_signal();
-/* void init_stream(); */
-/* void init_file(); */
+void init_stream();
+void init_file();
 
 #define SECURE_CHECK rb_secure(2)
 
@@ -101,7 +97,7 @@ void init_signal();
     rb_gc_register_address(&data->argv);                              \
     handle = ALLOC(uv_##ht##_t);                                      \
     handle->data = data;                                              \
-    uv_##ht##_init(uv_default_loop(), handle);                        \
+    uv_##ht##_init(event_loop, handle);                        \
     return Data_Wrap_Struct(rb_cObject, 0, ht##_handle_free, handle); \
   }
 
