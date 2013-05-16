@@ -36,6 +36,7 @@ VALUE cStream;
 VALUE cFile;
 VALUE mEmitter;
 VALUE id_call;
+VALUE id_new;
 
 void evio_close_stream(uv_pipe_t *);
 

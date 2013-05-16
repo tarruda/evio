@@ -14,4 +14,5 @@ void Init_evio()
   init_file();
 
   id_call = rb_intern("call");
+  id_new = rb_intern("new");
 }

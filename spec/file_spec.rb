@@ -6,12 +6,22 @@ describe 'File::' do
 
   fname = 'spec/fixtures/file_spec.txt'
 
-  it 'can open for reading' do
+  it 'opens files as streams' do
     file = EvIO::File::open(fname) do |err, stream|
+      err.should eq(nil)
+      stream.should be_a(EvIO::Stream)
     end
     EvIO::start
   end
 
+  it 'returns error on inexistent file' do
+    file = EvIO::File::open('nofile') do |err, stream|
+      puts err
+      err.should be_a(SystemCallError)
+      stream.should eq(nil)
+    end
+    EvIO::start
+  end
   # it 'can read' do
   #   @file.read do |err, chunk|
   #     chunk.should eq fcontents

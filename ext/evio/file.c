@@ -6,15 +6,19 @@ fs_open_cb(uv_fs_t *req)
 {
   event_data *data;
   uv_pipe_t *handle;
+  uv_err_t error;
+  char *error_msg;
   io_stream *stream;
-  VALUE ex = Qnil, wrapped_stream = Qnil;
+  VALUE rv, ex, wrapped_stream;
 
+  rv = ex = wrapped_stream = Qnil;
   data = req->data;
   stream = data->extra;
   
   if (req->result == -1) {
-    ex = rb_exc_new2(rb_eSystemCallError,
-        uv_strerror(uv_last_error(event_loop)));
+    error = uv_last_error(event_loop);
+    error_msg = uv_strerror(error);
+    ex = rb_exc_new2(rb_eSystemCallError, error_msg);
     free(stream);
   } else {
     stream->fd = req->result;
@@ -24,10 +28,11 @@ fs_open_cb(uv_fs_t *req)
     uv_pipe_open(handle, stream->fd);
     wrapped_stream = Data_Wrap_Struct(rb_cObject, 0,
         evio_close_stream, handle);
+    rv = rb_funcall(cStream, id_new, 1, wrapped_stream);
   }
 
   uv_fs_req_cleanup(req);
-  rb_funcall(data->block, id_call, 2, ex, wrapped_stream);
+  rb_funcall(data->block, id_call, 2, ex, rv);
   rb_gc_unregister_address(&data->block);
   free(data);
 }
